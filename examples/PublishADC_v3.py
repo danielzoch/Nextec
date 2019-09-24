@@ -23,24 +23,23 @@ client.begin(MQTT_USERNAME, MQTT_PASSWORD, MQTT_CLIENT_ID, loglevel=logging.INFO
 #Conversion  Coefficient
 VoltConv = 100/3
 #Initialize Voltages, timestamp, and GPIO pin
-Previous_Volt = 0
-JackVoltage = 0
+#Previous_Volt = 0
+#JackVoltage = 0
 timestamp = 0
 GPIO_pin = "GP1_4"
 
 #Setup GPIO pin as an OUTPUT
 GPIO.setup(GPIO_pin, GPIO.OUT)
 
-print("Evaluating current voltage readings...")
+print("Evaluating current voltage readings to determine charging status... please wait 20 seconds")
+Previous_Volt = adc.dc_jack.get_voltage()
+sleep(20)
 JackVoltage = adc.dc_jack.get_voltage()
-
-
-
 
 while True:
     client.loop()
-    #Continue if 5 seconds has passed
-    if (time.time() > timestamp + 5):
+    #Continue if 30 seconds has passed
+    if (time.time() > timestamp + 30):
         #Check if SCUTTLE is charging
         if Previous_Volt > JackVoltage+0.02:
             print("SCUTTLE is charging... toggling relays ON")
@@ -48,7 +47,7 @@ while True:
             Previous_Volt = JackVoltage
             #Toggle Relay ON to get accurate voltage reading while charging
             GPIO.output(GPIO_pin, GPIO.HIGH)
-            sleep(0.5)
+            sleep(0.3)
             JackVoltage = adc.dc_jack.get_voltage()
             #Toggle Relay back OFF
             GPIO.output(GPIO_pin, GPIO.LOW)
@@ -63,6 +62,8 @@ while True:
 	#Convert Voltage Value to Percentage for Cayenne
         if (JackVoltage < 9):
             Battery_Percentage = 0
+        elif (JackVoltage > 100):
+            Battery_Percentage = 100
         else:
             Battery_Percentage = VoltConv*(JackVoltage-9)
 
